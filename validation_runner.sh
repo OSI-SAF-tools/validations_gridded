@@ -1,8 +1,30 @@
 #!/usr/bin/env bash
 
-# Run a single validation
-#python3 validate ValidateConcHYR 20180101 20190101 http://thredds.met.no/thredds/dodsC/osisaf/met.no/ice/amsr2_conc/{Y}/{m:02d}/ice_conc_{hem}_polstere-100_amsr2_{Y}{m:02d}{d:02d}1200.nc /data2/ice_charts/gridded/OSISAF_NH/
 
-# Run a set of validations specified in config.yml
-python3 validation_runner.py DMI
+####################################################################
+## Run a single validation. It saves the results to a netCDF file.##
+####################################################################
 
+python3 validate ValidateConcHYR 20100101 20100301 \
+                 ftp://osisaf.met.no/archive/ice/conc/{Y}/{m:02d}/ice_conc_{hem}_polstere-100_multi_{Y}{m:02d}{d:02d}1200.nc \
+                 /data/jol/ice_charts/gridded/OSISAF/ /data/jol/results/
+                 \
+
+## Documentation
+#python3 validate --help
+
+
+######################################################
+## Run a set of validations specified in config.yml ##
+######################################################
+
+# Put the results in a database.
+# * Used in production.
+python3 validation_runner.py ProductionDMI
+
+# Put the results in a database and save the full results as a netCDF file and saves the OSI SAF files for reuse.
+# * Used to look further into the results.
+python3 validation_runner.py ProductionDMI --save_full_results --save_osisaf_files
+
+# Documentation
+python3 validation_runner.py --help

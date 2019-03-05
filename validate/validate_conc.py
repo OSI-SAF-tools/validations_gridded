@@ -1,5 +1,9 @@
+#!/usr/bin/python3
+
 """
 validate
+
+See __main__.py for full usage.
 
 Usage:
     validate_conc <validator> <start_date> <end_date> <url> <icechart_dir> [<save_dir>]
@@ -194,7 +198,7 @@ class ValidateConcHYR(ValidateConc):
 # Get a dictionary of all the validation classes
 validators = {name: obj for name, obj in
               inspect.getmembers(sys.modules[__name__], inspect.isclass)
-              if 'merge' in dir(obj)}
+              if 'merge' in dir(obj)}  # Only get classes with the merge method (which is in the base class)
 
 if __name__ == "__main__":
     # Client()

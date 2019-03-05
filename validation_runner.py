@@ -15,7 +15,7 @@ Options:
 <validation_set>    Should be one included in config.yml under ValidationsToRun
 
 Example:
-    python3 validation_runner.py DMI_production
+    python3 validation_runner.py ProductionDMI
 """
 
 import datetime
@@ -45,40 +45,40 @@ def get_config():
     return base_url
 
 
-def run_over_dates(start, stop, config, validation_set, save_full_results, save_osisaf_files):
+def to_database(json_str, machine_cfg):
+    print(json_str)
+    if machine_cfg['mongodb_ip']:
+        pass  # TODO: Insert result into a database
+    else:
+        pass  # TODO: Maybe save to json file in results directory
+
+
+def main(config, validation_set, save_full_results, save_osisaf_files):
     machine_cfg = config['MachineConfigs'][platform.node()]
     validations_list = config['ValidationsToRun'][validation_set]
+
+    start = '20000101'  # TODO: get this from database
+    today = datetime.datetime.now().strftime('%Y%m%d')
+    # stop = today # TODO: use this line
+    stop = '20060101'
+
+    if save_full_results:
+        results_dir = machine_cfg['results']
+    else:
+        results_dir = None
+
     for val_name in validations_list:
         val_cfg = config['Validations'][val_name]
         try:
 
             ice_chart_dir = join(machine_cfg['ice_charts'], val_cfg['icechart_dir'])
-            if save_full_results:
-                results_dir = machine_cfg['results']
-            else:
-                results_dir = None
-            yield validate(val_cfg['validator'], val_cfg['url'], ice_chart_dir, start, stop, results_dir,
-                           save_osisaf_files)
+            results = validate(val_cfg['validator'], val_cfg['url'], ice_chart_dir, start, stop,
+                               results_dir, save_osisaf_files)
+            to_database(results, machine_cfg)
 
         except Exception as err:
             log.error('Expection {0} with {1}'.format(err, val_name))
             raise
-
-
-def to_database(config, validation_set, save_full_results, save_osisaf_files):
-    machine_cfg = config['MachineConfigs'][platform.node()]
-
-    start = '20180101'  # TODO: get this from database
-    today = datetime.datetime.now().strftime('%Y%m%d')
-    # stop = today
-    stop = '20180201'
-
-    for json_str in run_over_dates(start, stop, config, validation_set, save_full_results, save_osisaf_files):
-        print(json_str)
-        if machine_cfg['mongodb_ip']:
-            pass  # TODO: Insert result into a database
-        else:
-            pass  # save to json file in results directory
 
 
 if __name__ == "__main__":
@@ -88,4 +88,4 @@ if __name__ == "__main__":
         available_validators()
     else:
         cfg = get_config()
-        to_database(cfg, args['<validation_set>'], args['--save_full_results'], args['--save_osisaf_files'])
+        main(cfg, args['<validation_set>'], args['--save_full_results'], args['--save_osisaf_files'])

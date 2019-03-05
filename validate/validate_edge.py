@@ -3,6 +3,8 @@
 """
 Validate Edge.
 
+See __main__.py for full usage.
+
 Usage:
     validate_edge <validator> <start_date> <end_date> <url> <icechart_dir> [<save_dir>]
 
@@ -165,7 +167,6 @@ class ValidateEdge(base.Validate):
         :return:
         """
         try:
-            log.info(ds.time)
             xy_test = self.get_xy_coords(ds['ice_edge_line'])
             kdt = KDTree(xy_test)
             xy_chart = self.get_xy_coords(ds['ice_chart_line'])
@@ -229,7 +230,7 @@ class ValidateEdge(base.Validate):
 # Get a dictionary of all the validation classes
 validators = {name: obj for name, obj in
               inspect.getmembers(sys.modules[__name__], inspect.isclass)
-              if 'merge' in dir(obj)}
+              if 'merge' in dir(obj)} # Only get classes with the merge method (which is in the base class)
 
 if __name__ == "__main__":
     # Client()

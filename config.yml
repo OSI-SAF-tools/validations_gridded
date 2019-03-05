@@ -20,15 +20,39 @@ Validations:
   # Template set validation arguments
   Example: # Name of validation set
     url: http//example.com/path/to/netcdf.nc # http or ftp address to OSI SAF data to validate
-    icechart_dir: relative_path_{hem} # The relative path to the ice charts relative_path_NH and relative_path_SH,
-                                      # where hem is the hemisphere (NH|SH). The base path is given above in MachineConfigs
+    icechart_dir: relative_path # The relative path to the ice charts directory.
+                                      # The base path is given above in MachineConfigs
     validator: ValidationClass # The validation class in validate_conc.py or validate_edge.py.
                                # Use and existing class or make a subclass.
+
+
+  # Sea Ice Conc: SSMIS
+
+  ice_conc_ssmis_http:
+    url: http://thredds.met.no/thredds/dodsC/osisaf/met.no/ice/conc/{Y}/{m:02d}/ice_conc_{hem}_polstere-100_multi_{Y}{m:02d}{d:02d}1200.nc
+    icechart_dir: OSISAF
+    validator: ValidateConcHYR
+
+  ice_conc_ssmis_ftp:
+    url: ftp://osisaf.met.no/archive/ice/conc/{Y}/{m:02d}/ice_conc_{hem}_polstere-100_multi_{Y}{m:02d}{d:02d}1200.nc
+    icechart_dir: OSISAF
+    validator: ValidateConcHYR
+
+
+  # Sea Ice Conc: AMSR-2 OSHD
 
   ice_conc_amsr_oshd_http:
     url: http://thredds.met.no/thredds/dodsC/osisaf/met.no/ice/amsr2_conc/{Y}/{m:02d}/ice_conc_{hem}_polstere-100_amsr2_{Y}{m:02d}{d:02d}1200.nc
     icechart_dir: OSISAF
     validator: ValidateConcHYR
+
+  ice_conc_amsr_oshd_ftp:
+    url: ftp://osisaf.met.no/archive/ice/conc_amsr/{Y}/{m:02d}/ice_conc_{hem}_polstere-100_amsr2_{Y}{m:02d}{d:02d}1200.nc
+    icechart_dir: OSISAF
+    validator: ValidateConcHYR
+
+
+  # Sea Ice Conc: AMSR-2 TUD
 
   ice_conc_amsr_tud_ftp:
     url: ftp://osisaf.met.no/archive/ice/conc_amsr/{Y}/{m:02d}/ice_conc_{hem}_polstere-100_amsr2-tud_{Y}{m:02d}{d:02d}1200.nc
@@ -36,14 +60,12 @@ Validations:
     validator: ValidateConcHYR
 
   ice_conc_amsr_tud_http:
-    url: http://thredds.met.no/thredds/dodsC/osisaf/met.no/ice/amsr2_conc/{Y}/{m:02d}/ice_conc_{hem}_polstere-100_amsr2_{Y}{m:02d}{d:02d}1200.nc
+    url: http://thredds.met.no/thredds/dodsC/osisaf/met.no/ice/amsr2_conc/{Y}/{m:02d}/ice_conc_{hem}_polstere-100_amsr2-tud_{Y}{m:02d}{d:02d}1200.nc
     icechart_dir: OSISAF
     validator: ValidateConcHYR
 
-  ice_conc_ssmis_http:
-    url: http://thredds.met.no/thredds/dodsC/osisaf/met.no/ice/conc/{Y}/{m:02d}/ice_conc_{hem}_polstere-100_multi_{Y}{m:02d}{d:02d}1200.nc
-    icechart_dir: OSISAF
-    validator: ValidateConcHYR
+
+  # Sea Ice Edge
 
   ice_conc_edge_ftp:
     url: ftp://osisaf.met.no/archive/ice/edge/{Y}/{m:02d}/ice_edge_{hem}_polstere-100_multi_{Y}{m:02d}{d:02d}1200.nc
@@ -55,71 +77,27 @@ Validations:
     icechart_dir: OSISAF
     validator: ValidateEdge
 
+
   # Add new validation config here...
 
 
+# Add the validation name to a list here:
 ValidationsToRun:
-  DMI_production:
+
+  # These are lists of validations run at DMI
+
+  # These use OpenDAP
+  ProductionDMI:
+    - ice_conc_ssmis_http
     - ice_conc_amsr_oshd_http
     - ice_conc_amsr_tud_http
-    - ice_conc_ssmis_http
     - ice_conc_edge_http
 
+  # The FTP servers have the full time series
+  ArchivedDMI:
+    - ice_conc_ssmis_ftp
+    - ice_conc_amsr_oshd_ftp
+    - ice_conc_amsr_tud_ftp
+    - ice_conc_edge_ftp
 
-
-
-
-# TODO: Delete this:
-## Validation parameters. They should have the same name as the class defined in validate_conc.py and
-## validate_edge.py (e.g. ValidateHYR, ValidateEdge)
-#
-#ValidateConcHYR:
-#  test_url_base: http://thredds.met.no/thredds/dodsC/osisaf/met.no/ice/conc/
-#  test_url_end: '{Y}/{m:02d}/ice_conc_{hem}_polstere-100_multi_{Y}{m:02d}{d:02d}1200.nc'
-#  results_dir: osi_conc/
-#  ice_charts:
-#    NH: gridded/OSISAF_NH
-#    SH: gridded/OSISAF_SH
-#
-#ValidateConcAmsr2HYR:
-#  test_url_base: http://thredds.met.no/thredds/dodsC/osisaf/met.no/ice/amsr2_conc/
-#  test_url_end: '{Y}/{m:02d}/ice_conc_{hem}_polstere-100_amsr2_{Y}{m:02d}{d:02d}1200.nc'
-#  results_dir: osi_conc_amsr2/
-#  ice_charts:
-#    NH: gridded/OSISAF_NH
-#    SH: gridded/OSISAF_SH
-#
-#ValidateConcAmsr2StdMultiyear:
-#  ftp_server: osisaf.met.no
-#  test_url_base: archive/ice/conc_amsr/
-#  test_url_end: '{Y}/{m:02d}/ice_conc_{hem}_polstere-100_amsr2_{Y}{m:02d}{d:02d}1200.nc'
-#  results_dir: osi_conc_amsr2/
-#  ice_charts:
-#    NH: gridded/OSISAF_NH
-#    SH: gridded/OSISAF_SH
-#
-#ValidateConcAmsr2TudMultiyear:
-#  ftp_server: osisaf.met.no
-#  test_url_base: archive/ice/conc_amsr/
-#  test_url_end: '{Y}/{m:02d}/ice_conc_{hem}_polstere-100_amsr2_{Y}{m:02d}{d:02d}1200.nc'
-#  results_dir: osi_conc_amsr2/
-#  ice_charts:
-#    NH: gridded/OSISAF_NH
-#    SH: gridded/OSISAF_SH
-#
-#ValidateEdge:
-#  test_url_base: http://thredds.met.no/thredds/dodsC/osisaf/met.no/ice/edge/
-#  test_url_end: '{Y}/{m:02d}/ice_edge_{hem}_polstere-100_multi_{Y}{m:02d}{d:02d}1200.nc'
-#  results_dir: osi_edge/
-#  ice_charts:
-#    NH: gridded/OSISAF_NH
-#    SH: gridded/OSISAF_SH
-#
-#ValidateEdgeMultiYear:
-#  ftp_server: osisaf.met.no
-#  test_url_base: archive/ice/edge/
-#  test_url_end: '{Y}/{m:02d}/ice_edge_{hem}_polstere-100_multi_{Y}{m:02d}{d:02d}1200.nc'
-#  results_dir: osi_edge/
-#  ice_charts:
-#    NH: gridded/OSISAF_NH
-#    SH: gridded/OSISAF_SH
+  # Add a new list here:
