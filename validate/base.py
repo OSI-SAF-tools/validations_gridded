@@ -3,7 +3,6 @@ import datetime
 import logging
 import numpy as np
 import os
-import platform
 import sys
 import warnings
 import xarray as xr
@@ -12,7 +11,7 @@ from datetime import datetime, timedelta
 from ftplib import FTP, error_perm
 from functools import lru_cache
 from glob import glob
-from os.path import join, isfile, isdir
+from os.path import join, isfile
 
 log = logging.getLogger()
 log.setLevel(logging.DEBUG)
@@ -28,6 +27,7 @@ sys.path.insert(0, os.getcwd())
 
 
 class Validate:
+    name = 'validation'
 
     def __init__(self, url, icechart_dir, hemisphere, start_date, end_date, store_test_files=False):
         """
@@ -56,7 +56,6 @@ class Validate:
             '__',
             '_')
         self.save_dir = join('/tmp', self.save_name)
-        self.remove_empty_files()
         try:
             os.makedirs(self.save_dir)
         except FileExistsError:
@@ -112,7 +111,7 @@ class Validate:
                 log.error('This url does not exist: {0}'.format(url))
                 continue
             finally:
-                if os.stat(full_filename).st_size == 0:
+                if isfile(full_filename) and os.stat(full_filename).st_size == 0:
                     os.remove(full_filename)
                 if not self.store_test_files:
                     self.delete_list.append(full_filename)
@@ -321,14 +320,15 @@ class Validate:
         fname = join(results_dir, self.save_name + '_{0}_{1}_{2}.nc'.format(*v))
         self.dataset.to_netcdf(fname, encoding=encodings)  # , unlimited_dims=['time'])
 
-    def remove_empty_files(self):
+    def __enter__(self):
         for f in glob(join(self.save_dir, '*.nc')):
             if os.stat(f).st_size == 0:
                 print('Removing empty file: {0}'.format(f))
                 os.remove(f)
-
-    def __enter__(self):
         return self
+
+    def __str__(self):
+        return 'validation'
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         try:

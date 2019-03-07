@@ -1,8 +1,38 @@
+from validate import validate_conc
+from validate import validate_edge
 import os
 
 
-def run_val(validators, validator, url, icechart_dir, start_date, end_date, doc_str, file_str, netcdf_dir=None,
-            store_test_files=False):
+def get_validation_classes(modules):
+    'Get the validation classes from the submodules'
+    for mod in modules:
+        attrs = dir(mod)  # This will list a lot of things, but we only want the validation classes
+        for attr in attrs:
+            try:
+                cls = getattr(mod, attr)
+                # The validation classes have the attribute 'validation'
+                if getattr(cls, 'name') == 'validation':
+                    yield cls
+            except AttributeError:
+                pass
+
+
+validators = {cls.__name__: cls for cls in get_validation_classes((validate_conc, validate_edge))}
+
+
+def validate(validator, url, icechart_dir, start_date, end_date, netcdf_dir=None, save_osisaf_files=False):
+    """
+    :param validator: name of class used to do the validation
+    :param url:  url of OSI SAF data
+    :param icechart_dir: relative directory of ice chart
+    :param start_date: start date in format YYYYMMDD
+    :param end_date: end date in format YYYYMMDD
+    :param netcdf_dir: directory to store the results
+    :param save_osisaf_files: save the OSI SAF files for reuse
+
+    :return: A dictionary as follows: {'NH': NH results as JSON string, 'SH', ... }
+    """
+
     try:
         assert os.path.isdir(icechart_dir)
     except AssertionError:
@@ -15,12 +45,12 @@ def run_val(validators, validator, url, icechart_dir, start_date, end_date, doc_
             try:
                 validator_cls = validators[validator]
             except KeyError:
-                doc_str
                 print("Error: class '{cls}' was not found!\n".format(cls=validator))
                 print('<validator> should be one of the following:')
-                _available_validators(validators)
-                raise()
-            with validator_cls(url, icechart_dir, hem, str(start_date), str(end_date), store_test_files) as val:
+                for av in available_validators(validators):
+                    print(av)
+                raise ()
+            with validator_cls(url, icechart_dir, hem, str(start_date), str(end_date), save_osisaf_files) as val:
                 results[hem] = val()
                 if netcdf_dir:
                     val.to_netcdf(netcdf_dir)
@@ -31,13 +61,13 @@ def run_val(validators, validator, url, icechart_dir, start_date, end_date, doc_
     return results
 
 
-def _available_validators(validators):
+def available_validators(validators):
     for v in validators.keys():
-        print('  ', v)
-    print("""
+        yield '    ' + v
+    yield """
     You can make a new validator creating a subclass in validate_conc.py or validate_edge.py and  
     adding it to the config.yml, as follows:
-    
+
      Validations:
       # Template set validation arguments
       Example: # Name of validation set
@@ -46,7 +76,7 @@ def _available_validators(validators):
                                             # where hem is the hemisphere (NH|SH). The base path is given above in MachineConfigs
         <validator>: ValidationClass # The validation class in validate_conc.py or validate_edge.py.
                                      # Use and existing class or make a subclass.
-                                   
+
     Then add it to config.yml under
     ValidationsToRun:
       <NameOfValidationList>:
@@ -54,4 +84,4 @@ def _available_validators(validators):
         - ...
         - <validator>
 
-     """)
+     """

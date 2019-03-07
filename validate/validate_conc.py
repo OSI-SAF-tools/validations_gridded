@@ -1,16 +1,6 @@
 #!/usr/bin/python3
 
-"""
-validate
 
-See __main__.py for full usage.
-
-Usage:
-    validate_conc <validator> <start_date> <end_date> <url> <icechart_dir> [<save_dir>]
-
-"""
-
-import inspect
 import logging
 import sys
 # from distributed import Client
@@ -19,9 +9,8 @@ from collections import OrderedDict
 import numpy as np
 import pandas as pd
 import xarray as xr
-from docopt import docopt
 
-from validate import base, run
+from validate import base
 
 log = logging.getLogger()
 log.setLevel(logging.DEBUG)
@@ -182,33 +171,7 @@ class ValidateConcCDR450(ValidateConc):
         return da
 
 
-class ValidateConcICDR430(ValidateConc):
-    def load_test_data(self, source_glob, preprocess=None):
-        test = super().load_test_data(source_glob, preprocess)
-        test['status_flag'] = test['status_flag'].astype(np.uint8)
-        return test
-
-
 class ValidateConcHYR(ValidateConc):
     def select_using_flags(self, data_array):
         da = data_array.where(self.has_flag(0))
         return da
-
-
-# Get a dictionary of all the validation classes
-validators = {name: obj for name, obj in
-              inspect.getmembers(sys.modules[__name__], inspect.isclass)
-              if 'merge' in dir(obj)}  # Only get classes with the merge method (which is in the base class)
-
-if __name__ == "__main__":
-    # Client()
-    args = docopt(__doc__)
-    run.run_val(validators,
-                args['<validator>'],
-                args['<url>'],
-                args['<icechart_dir>'],
-                args['<start_date>'],
-                args['<end_date>'],
-                args['<save_dir>'],
-                __doc__,
-                __file__)

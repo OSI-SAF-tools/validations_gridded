@@ -1,19 +1,9 @@
 #!/usr/bin/env python3
 
-"""
-Validate Edge.
-
-See __main__.py for full usage.
-
-Usage:
-    validate_edge <validator> <start_date> <end_date> <url> <icechart_dir> [<save_dir>]
-
-"""
-
 import warnings
 from functools import partial
 
-from validate import base, run
+from validate import base
 import dask.array as da
 import numpy as np
 import xarray as xr
@@ -21,8 +11,6 @@ from scipy.spatial import KDTree
 from skimage import feature
 import logging
 import sys
-import inspect
-from docopt import docopt
 
 log = logging.getLogger()
 log.setLevel(logging.DEBUG)
@@ -227,20 +215,4 @@ class ValidateEdge(base.Validate):
         return json_str
 
 
-# Get a dictionary of all the validation classes
-validators = {name: obj for name, obj in
-              inspect.getmembers(sys.modules[__name__], inspect.isclass)
-              if 'merge' in dir(obj)} # Only get classes with the merge method (which is in the base class)
 
-if __name__ == "__main__":
-    # Client()
-    args = docopt(__doc__)
-    run.run_val(validators,
-                args['<validator>'],
-                args['<url>'],
-                args['<icechart_dir>'],
-                args['<start_date>'],
-                args['<end_date>'],
-                args['<save_dir>'],
-                __doc__,
-                __file__)

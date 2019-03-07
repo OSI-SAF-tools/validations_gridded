@@ -28,15 +28,9 @@ ftp://osisaf.met.no/archive/ice/conc/{Y}/{m:02d}/ice_conc_{hem}_polstere-100_mul
 
 """
 
-import os
-import sys
-
 from docopt import docopt
 
-path = os.path.dirname(sys.modules[__name__].__file__)
-path = os.path.join(path, '..')
-sys.path.insert(0, path)
-from validate import validate
+from validate.run import validate
 
 if __name__ == "__main__":
     args = docopt(__doc__)

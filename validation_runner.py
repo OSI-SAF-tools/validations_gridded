@@ -57,10 +57,11 @@ def main(config, validation_set, save_full_results, save_osisaf_files):
     machine_cfg = config['MachineConfigs'][platform.node()]
     validations_list = config['ValidationsToRun'][validation_set]
 
-    start = '20000101'  # TODO: get this from database
+    # start = '20050401'  # TODO: get this from database
+    start = '20170427'  # TODO: get this from database
     today = datetime.datetime.now().strftime('%Y%m%d')
     # stop = today # TODO: use this line
-    stop = '20060101'
+    stop = '20190301'
 
     if save_full_results:
         results_dir = machine_cfg['results']
@@ -85,7 +86,8 @@ if __name__ == "__main__":
     args = docopt(__doc__)
     if args['--available_validators']:
         print('Available validators:')
-        available_validators()
+        for av in available_validators():
+            print(av)
     else:
         cfg = get_config()
         main(cfg, args['<validation_set>'], args['--save_full_results'], args['--save_osisaf_files'])
