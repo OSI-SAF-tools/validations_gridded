@@ -70,8 +70,8 @@ class Validate:
         log.info("Loading reference data...")
         self.ds_ref = self.load_reference_data(self.ref_glob)
 
-        self.ds_ref['xc'] = self.ds_test.xc
-        self.ds_ref['yc'] = self.ds_test.yc
+        # self.ds_ref['xc'] = self.ds_test.xc
+        # self.ds_ref['yc'] = self.ds_test.yc
 
         # Check that the coordinates for the reference and test dataset are the same
         assert np.all(self.ds_ref.xc.data == self.ds_test.xc.data)
@@ -310,7 +310,7 @@ class Validate:
 
     @staticmethod
     def aggregate_stats(dataset, variable):
-        return dataset[variable].resample(time='6M', closed='left').mean()
+        return dataset[variable].resample(time='6M').mean()
 
     def to_netcdf(self, results_dir):
         encoding_float = {"least_significant_digit": 4, "zlib": True, "complevel": 6}

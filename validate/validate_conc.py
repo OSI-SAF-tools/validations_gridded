@@ -80,6 +80,8 @@ class ValidateConc(base.Validate):
         ice_bias, ice_stddev = self.bias_std(conc_error.where(ice))
         water = chart_standard <= 1
         water_bias, water_stddev = self.bias_std(conc_error.where(water))
+        marginal = np.logical_and(chart_standard > 1, chart_standard < 99)
+        marginal_bias, marginal_stddev = self.bias_std(conc_error.where(marginal))
 
         count, within_10pct = self.match_pct(self.dataset.conc_error, 10)
         count, within_20pct = self.match_pct(self.dataset.conc_error, 20)
@@ -88,6 +90,9 @@ class ValidateConc(base.Validate):
 
                             total_bias=total_bias,
                             total_stddev=total_stddev,
+
+                            intermediate_bias=marginal_bias,
+                            intermediate_stddev=marginal_stddev,
 
                             ice_bias=ice_bias,
                             ice_stddev=ice_stddev,
@@ -132,10 +137,11 @@ class ValidateConc(base.Validate):
                                                   'description': '6 monthly mean of ice SD at end of period'}
         self.dataset.water_bias_6monthly.attrs = {'unit': '-', 'long_name': 'water_bias_6monthly', 'x_label': 'Date',
                                                   'y_label': 'Bias', 'plot_type': '',
-                                                  'description': '6 monthly mean of water bias at end of period'}
+                                                  'description':
+                                                      '6 monthly mean of water bias with time at the start of the interval'}
         self.dataset.water_stddev_6monthly.attrs = {'unit': '-', 'long_name': 'water_SD_6monthly', 'x_label': 'Date',
                                                     'y_label': '$\sigma$', 'plot_type': '',
-                                                    'description': '6 monthly mean of water SD at end of period'}
+                                                    'description': '6 monthly mean of water SD with time at the start of the interval'}
 
         return pd.DataFrame(stats)
 
@@ -161,7 +167,7 @@ class ValidateConc(base.Validate):
         return json_str
 
 
-class ValidateConcCDR450(ValidateConc):
+class ValidateConcCDR(ValidateConc):
     def select_using_flags(self, data_array):
         # Draft E
         mask_flags = self.has_flag(1) | self.has_flag(2) | \

@@ -4,28 +4,39 @@
 validation_runner
 
 Usage:
-    validation_runner.py <validation_set> [--save_full_results] [--save_osisaf_files]
+    validation_runner.py <validation_set> <start> <end>
+    validation_runner.py to_database <validation_set>
     validation_runner.py --available_validators
     validation_runner.py -h | --help
 
 Options:
-    --save_full_results     Saves the results to a netCDF file, in the results directory given in config.yml
-    --save_osisaf_files     Saves the OSI SAF files in /tmp for reuse
+    -h --help               Show this screen
+    --available_validators  List the available validators to use for <validation_set>
 
-<validation_set>    Should be one included in config.yml under ValidationsToRun
+to_database        Save to results to a database and do NOT store OSI SAF files locally or save the results in a netCDF file
+<validation_set>   Should be one included in config.yml under ValidationsToRun
+<start>            Start date of validation period, in the format YYYYmmdd
+<end>              End date of validation period, in the format YYYYmmdd
 
-Example:
-    python3 validation_runner.py ProductionDMI
+Examples:
+    # Put the results in a database. Used in production.
+    python3 validation_runner.py to_database ProductionDMI
+
+    # Put the results in a database and save the full results as a netCDF file and saves the OSI SAF files for reuse.
+    # Used to look further into the results.
+    python3 validation_runner.py ProductionDMI 20150101 20170101
+
+    # Documentation
+    python3 validation_runner.py --help
 """
 
 import datetime
 import logging
 import platform
 import sys
-from os.path import join, dirname
-
 import yaml
 from docopt import docopt
+from os.path import join, dirname
 
 from validate import validate, available_validators
 
@@ -45,23 +56,9 @@ def get_config():
     return base_url
 
 
-def to_database(json_str, machine_cfg):
-    print(json_str)
-    if machine_cfg['mongodb_ip']:
-        pass  # TODO: Insert result into a database
-    else:
-        pass  # TODO: Maybe save to json file in results directory
-
-
-def main(config, validation_set, save_full_results, save_osisaf_files):
+def validation(config, validation_set, start, end, save_full_results, save_osisaf_files):
     machine_cfg = config['MachineConfigs'][platform.node()]
     validations_list = config['ValidationsToRun'][validation_set]
-
-    # start = '20050401'  # TODO: get this from database
-    start = '20170427'  # TODO: get this from database
-    today = datetime.datetime.now().strftime('%Y%m%d')
-    # stop = today # TODO: use this line
-    stop = '20190301'
 
     if save_full_results:
         results_dir = machine_cfg['results']
@@ -71,15 +68,22 @@ def main(config, validation_set, save_full_results, save_osisaf_files):
     for val_name in validations_list:
         val_cfg = config['Validations'][val_name]
         try:
-
             ice_chart_dir = join(machine_cfg['ice_charts'], val_cfg['icechart_dir'])
-            results = validate(val_cfg['validator'], val_cfg['url'], ice_chart_dir, start, stop,
+            results = validate(val_cfg['validator'], val_cfg['url'], ice_chart_dir, start, end,
                                results_dir, save_osisaf_files)
-            to_database(results, machine_cfg)
-
+            yield val_name, results
         except Exception as err:
             log.error('Expection {0} with {1}'.format(err, val_name))
             raise
+
+
+def to_database(config, validation_set):
+    start  # TODO: get from db
+    end  # TODO: get from db
+    if machine_cfg['mongodb_ip']:
+        pass  # TODO: Insert result into a database
+    for name, res in validation(config, validation_set, start, end, False, False):
+        pass  # TODO: insert into database
 
 
 if __name__ == "__main__":
@@ -90,4 +94,11 @@ if __name__ == "__main__":
             print(av)
     else:
         cfg = get_config()
-        main(cfg, args['<validation_set>'], args['--save_full_results'], args['--save_osisaf_files'])
+        if args['to_database']:
+            to_database(cfg, args['<validation_set>'])
+        else:
+            save_full_results = save_osisaf_files = True
+            for name, result in validation(cfg, args['<validation_set>'], args['<start>'], args['<end>'],
+                                           save_full_results, save_osisaf_files):
+                print(name)
+                print(result)

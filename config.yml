@@ -79,10 +79,17 @@ Validations:
 
   # (I)CDF
 
-  ice_conc_icdr_http:
+  ice_conc_icdr_osi430_http:
     url: http://thredds.met.no/thredds/dodsC/osisaf/met.no/reprocessed/ice/conc_cr_files/{Y}/{m:02d}/ice_conc_{hem}_polstere-100_cont-reproc_{Y}{m:02d}{d:02d}1200.nc
     icechart_dir: OSISAF
-    validator: ValidateConcCDR450
+    validator: ValidateConcCDR
+
+  ice_conc_icdr_osi430b_http:
+    url: http://thredds.met.no/thredds/dodsC/metusers/thomasl/OSI430B_draft/250/{Y}/{m:02d}/ice_conc_{hem}_ease2-250_icdr-v2p0_{Y}{m:02d}{d:02d}1200.nc
+    icechart_dir: EASE2
+    validator: ValidateConcCDR
+
+
 
   # Add new validation config here...
 
@@ -107,6 +114,7 @@ ValidationsToRun:
     - ice_conc_edge_ftp
 
   ICDR:
-    - ice_conc_icdr_http
+    - ice_conc_icdr_osi430_http
+    - ice_conc_icdr_osi430b_http
 
   # Add a new list here:

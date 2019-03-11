@@ -4,10 +4,16 @@ from os.path import join, isdir
 import platform
 
 import matplotlib.pylab as plt
+import matplotlib.dates as mdates
+
 import numpy as np
 import xarray as xr
 import yaml
 
+
+years = mdates.YearLocator()   # every year
+months = mdates.MonthLocator()  # every month
+yearsFmt = mdates.DateFormatter('%Y')
 
 def get_config():
     with open("config.yml", 'r') as stream:
@@ -19,6 +25,9 @@ def plot_bar(da20pct, da10pct, fig, ax):
     attrs = da10pct.attrs
     plt.bar(da20pct['time'].to_series(), da20pct.values, width=6, color='tab:red')
     plt.bar(da10pct['time'].to_series(), da10pct.values, width=6, color='tab:blue')
+    ax.xaxis.set_major_locator(years)
+    ax.xaxis.set_major_formatter(yearsFmt)
+    ax.xaxis.set_minor_locator(months)
     ax.legend(['Within 20%', 'Within 10%'], loc=4)
     ax.set_xlabel('{0}'.format(attrs['x_label']))
     ax.set_ylabel('{0} ({1})'.format(attrs['y_label'], attrs['unit']))
@@ -38,10 +47,14 @@ def plots_conc(ds, save_dir):
         fig, ax = plt.subplots(1, 1, figsize=(6, 6 / 1.618))
         fig, ax = plot_line(ds['ice_' + v], fig, ax)
         fig, ax = plot_line(ds['water_' + v], fig, ax, color='tab:green')
+        fig, ax = plot_line(ds['intermediate_' + v], fig, ax, color='grey')
+        ax.xaxis.set_major_locator(years)
+        ax.xaxis.set_major_formatter(yearsFmt)
+        ax.xaxis.set_minor_locator(months)
         attrs = ds['ice_' + v].attrs
         ax.set_xlabel('{0}'.format(attrs['x_label']))
         ax.set_ylabel('{0} ({1})'.format(attrs['y_label'], attrs['unit']))
-        ax.legend(['Ice', 'Water'])
+        ax.legend(['Ice', 'Water', 'Intermediate'])
         ax.grid()
         ax.axhline(color='k')
         # # fig.autofmt_xdate()()()
@@ -106,19 +119,23 @@ def plots_edge(ds, save_dir):
     return
 
 
-config = get_config()
-
-direc = join(config['MachineConfigs'][platform.node()]['results'])
-for fname in glob(direc + '*.nc'):
-    save_dir = fname.replace('.nc', '')
-    # if not isdir(save_dir):
-    if True:
-        try:
-            os.mkdir(save_dir)
-        except OSError:
-            pass
-        ds = xr.open_dataset(fname)
-        if 'conc' in fname:
-            plots_conc(ds, save_dir)
-        elif 'edge' in fname:
-            plots_edge(ds, save_dir)
+if __name__ == '__main__':
+    config = get_config()
+    direc = join(config['MachineConfigs'][platform.node()]['results'])
+    for fname in glob(direc + '*.nc'):
+        print(fname)
+        save_dir = fname.replace('.nc', '')
+        # if not isdir(save_dir):
+        if True:
+            try:
+                os.mkdir(save_dir)
+            except OSError:
+                pass
+            ds = xr.open_dataset(fname)
+            try:
+                if 'conc' in fname:
+                    plots_conc(ds, save_dir)
+                elif 'edge' in fname:
+                    plots_edge(ds, save_dir)
+            except KeyError:
+                pass
