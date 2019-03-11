@@ -8,10 +8,9 @@
 python3 validate ValidateConcHYR 20100101 20100301 \
                  ftp://osisaf.met.no/archive/ice/conc/{Y}/{m:02d}/ice_conc_{hem}_polstere-100_multi_{Y}{m:02d}{d:02d}1200.nc \
                  /data/jol/ice_charts/gridded/OSISAF/ /data/jol/results/
-                 \
 
 ## Documentation
-#python3 validate --help
+python3 validate --help
 
 
 ######################################################

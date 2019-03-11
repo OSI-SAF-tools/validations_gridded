@@ -4,30 +4,38 @@
 validation_runner
 
 Usage:
-    validation_runner.py <validation_set> <start> <end>
-    validation_runner.py to_database <validation_set>
+    validation_runner.py <validation_names> <start> <end>
+    validation_runner.py to_database <validation_names>
     validation_runner.py --available_validators
     validation_runner.py -h | --help
 
 Options:
     -h --help               Show this screen
-    --available_validators  List the available validators to use for <validation_set>
+    --available_validators  List the available validators to use for <validation_names>
 
-to_database        Save to results to a database and do NOT store OSI SAF files locally or save the results in a netCDF file
-<validation_set>   Should be one included in config.yml under ValidationsToRun
-<start>            Start date of validation period, in the format YYYYmmdd
-<end>              End date of validation period, in the format YYYYmmdd
+Arguments:
+    to_database        Save to results to a database and do NOT store OSI SAF files locally or save the results in a netCDF file
+    <validation_names> Should be one included in config.yml under ValidationLists or Validations
+    <start>            Start date of validation period, in the format YYYYmmdd
+    <end>              End date of validation period, in the format YYYYmmdd
+
+With 'validation_runner.py to_database <validation_names>' the latest results are stored in a database, whereas with
+'validation_runner.py <validation_names> <start> <end>' the results are stored as a netCDF to the directory
+MachineConfigs/results in config.yml.
 
 Examples:
-    # Put the results in a database. Used in production.
-    python3 validation_runner.py to_database ProductionDMI
+    Run validation for the list ProductionDMI and the results in a database (used in production):
+        python3 validation_runner.py to_database ProductionDMI
 
-    # Put the results in a database and save the full results as a netCDF file and saves the OSI SAF files for reuse.
-    # Used to look further into the results.
-    python3 validation_runner.py ProductionDMI 20150101 20170101
+    Run validation and save the full results as a netCDF file and saves the OSI SAF files for reuse
+    (used to look further into the results):
+        Run validation for the list ProductionDMI in config.yml under Validations:
+            python3 validation_runner.py ProductionDMI 20150101 20170101
+        Run single validation, ice_conc_edge_http, given in config.yml ValidationLists:
+            python3 validation_runner.py ice_conc_edge_http 20150101 20170101
 
-    # Documentation
-    python3 validation_runner.py --help
+    Documentation
+        python3 validation_runner.py --help
 """
 
 import datetime
@@ -58,7 +66,11 @@ def get_config():
 
 def validation(config, validation_set, start, end, save_full_results, save_osisaf_files):
     machine_cfg = config['MachineConfigs'][platform.node()]
-    validations_list = config['ValidationsToRun'][validation_set]
+
+    try:
+        validations_list = config['ValidationLists'][validation_set]
+    except KeyError:
+        validations_list = [validation_set, ]
 
     if save_full_results:
         results_dir = machine_cfg['results']
@@ -95,10 +107,10 @@ if __name__ == "__main__":
     else:
         cfg = get_config()
         if args['to_database']:
-            to_database(cfg, args['<validation_set>'])
+            to_database(cfg, args['<validation_names>'])
         else:
             save_full_results = save_osisaf_files = True
-            for name, result in validation(cfg, args['<validation_set>'], args['<start>'], args['<end>'],
+            for name, result in validation(cfg, args['<validation_names>'], args['<start>'], args['<end>'],
                                            save_full_results, save_osisaf_files):
                 print(name)
                 print(result)

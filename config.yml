@@ -95,7 +95,7 @@ Validations:
 
 
 # Add the validation name to a list here:
-ValidationsToRun:
+ValidationLists:
 
   # These are lists of validations run at DMI
 
