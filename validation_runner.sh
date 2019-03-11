@@ -17,11 +17,16 @@ python3 validate --help
 ## Run a set of validations specified in config.yml ##
 ######################################################
 
-# Put the results in a database. Used in production.
+# Run validation for the list ProductionDMI and the results in a database (used in production):
 python3 validation_runner.py to_database ProductionDMI
 
-# Put the results in a database and save the full results as a netCDF file and saves the OSI SAF files for reuse.
-# Used to look further into the results.
+# Run validation and save the full results as a netCDF file and saves the OSI SAF files for reuse
+# (used to look further into the results):
+
+# Run validation for the list ProductionDMI in config.yml under Validations:
+python3 validation_runner.py ice_conc_edge_http 20150101 20170101
+
+# Run single validation, ice_conc_edge_http, given in config.yml ValidationLists:
 python3 validation_runner.py ProductionDMI 20150101 20170101
 
 # Documentation

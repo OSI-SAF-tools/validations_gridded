@@ -30,12 +30,9 @@ Examples:
     Run validation and save the full results as a netCDF file and saves the OSI SAF files for reuse
     (used to look further into the results):
         Run validation for the list ProductionDMI in config.yml under Validations:
-            python3 validation_runner.py ProductionDMI 20150101 20170101
-        Run single validation, ice_conc_edge_http, given in config.yml ValidationLists:
             python3 validation_runner.py ice_conc_edge_http 20150101 20170101
-
-    Documentation
-        python3 validation_runner.py --help
+        Run single validation, ice_conc_edge_http, given in config.yml ValidationLists:
+            python3 validation_runner.py ProductionDMI 20150101 20170101
 """
 
 import datetime
