@@ -15,6 +15,7 @@ years = mdates.YearLocator()   # every year
 months = mdates.MonthLocator()  # every month
 yearsFmt = mdates.DateFormatter('%Y')
 
+
 def get_config():
     with open("config.yml", 'r') as stream:
         base_url = yaml.load(stream)
@@ -45,8 +46,8 @@ def plot_line(da, fig, ax, color=None):
 def plots_conc(ds, save_dir):
     for v in ['bias', 'stddev']:
         fig, ax = plt.subplots(1, 1, figsize=(6, 6 / 1.618))
-        fig, ax = plot_line(ds['ice_' + v], fig, ax)
-        fig, ax = plot_line(ds['water_' + v], fig, ax, color='tab:green')
+        fig, ax = plot_line(ds['ice_' + v], fig, ax, color='red')
+        fig, ax = plot_line(ds['water_' + v], fig, ax, color='blue')
         fig, ax = plot_line(ds['intermediate_' + v], fig, ax, color='grey')
         ax.xaxis.set_major_locator(years)
         ax.xaxis.set_major_formatter(yearsFmt)
@@ -57,6 +58,9 @@ def plots_conc(ds, save_dir):
         ax.legend(['Ice', 'Water', 'Intermediate'])
         ax.grid()
         ax.axhline(color='k')
+        start = '{0}-01-01'.format(ds.time.to_series().min().year)
+        end = '{0}-01-01'.format(ds.time.to_series().max().year)
+        ax.set_xlim((start, end))
         # # fig.autofmt_xdate()()()
         fig.tight_layout()
         plt.savefig(join(save_dir, v + '.png'), dpi=180)
