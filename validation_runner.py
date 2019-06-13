@@ -35,7 +35,6 @@ Examples:
             python3 validation_runner.py ProductionDMI 20150101 20170101
 """
 
-import datetime
 import logging
 import platform
 import sys

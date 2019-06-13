@@ -2,13 +2,12 @@
 
 
 import logging
-import sys
-# from distributed import Client
-from collections import OrderedDict
-
 import numpy as np
 import pandas as pd
+import sys
 import xarray as xr
+# from distributed import Client
+from collections import OrderedDict
 
 from validate import base
 
@@ -106,12 +105,6 @@ class ValidateConc(base.Validate):
                             count=count)
         self.dataset = self.dataset.update(stats)
 
-        for variable in ['ice_bias', 'ice_stddev', 'water_bias', 'water_stddev']:
-            data = self.aggregate_stats(self.dataset, variable)
-            self.dataset[variable + '_6monthly'] = xr.DataArray(data,
-                                                                dims='times_6monthly',
-                                                                coords={'times_6monthly': data.time.values})
-
         self.dataset.total_bias.attrs = {'unit': '-', 'long_name': 'total_bias', 'x_label': 'Date',
                                          'y_label': 'Bias', 'plot_type': 'line'}
         self.dataset.total_stddev.attrs = {'unit': '-', 'long_name': 'total_SD', 'x_label': 'Date',
@@ -128,20 +121,6 @@ class ValidateConc(base.Validate):
                                            'x_label': 'Date', 'y_label': 'Match', 'plot_type': 'bar'}
         self.dataset.within_20pct.attrs = {'unit': '%', 'long_name': 'water_SD', 'x_label': 'Date',
                                            'y_label': 'Match', 'plot_type': 'bar'}
-
-        self.dataset.ice_bias_6monthly.attrs = {'unit': '-', 'long_name': 'ice_bias_6monthly', 'x_label': 'Date',
-                                                'y_label': 'Bias', 'plot_type': '',
-                                                'description': '6 monthly mean of ice bias at end of period'}
-        self.dataset.ice_stddev_6monthly.attrs = {'unit': '-', 'long_name': 'ice_SD_6monthly', 'x_label': 'Date',
-                                                  'y_label': '$\sigma$', 'plot_type': '',
-                                                  'description': '6 monthly mean of ice SD at end of period'}
-        self.dataset.water_bias_6monthly.attrs = {'unit': '-', 'long_name': 'water_bias_6monthly', 'x_label': 'Date',
-                                                  'y_label': 'Bias', 'plot_type': '',
-                                                  'description':
-                                                      '6 monthly mean of water bias with time at the start of the interval'}
-        self.dataset.water_stddev_6monthly.attrs = {'unit': '-', 'long_name': 'water_SD_6monthly', 'x_label': 'Date',
-                                                    'y_label': '$\sigma$', 'plot_type': '',
-                                                    'description': '6 monthly mean of water SD with time at the start of the interval'}
 
         return pd.DataFrame(stats)
 
@@ -163,7 +142,7 @@ class ValidateConc(base.Validate):
         self.compute_stats()
 
         out_vars = ['ice_bias', 'ice_stddev', 'water_bias', 'water_stddev', 'within_10pct', 'within_20pct']
-        json_str = self.dataset.drop('source')[out_vars].to_dataframe().transpose().to_json(double_precision=3)
+        json_str = self.dataset[out_vars].to_dataframe().transpose().to_json(double_precision=3)
         return json_str
 
 
@@ -181,3 +160,42 @@ class ValidateConcHYR(ValidateConc):
     def select_using_flags(self, data_array):
         da = data_array.where(self.has_flag(0))
         return da
+
+
+class ValdiateConcL2(ValidateConc):
+
+    def select_using_flags(self, data_array):
+        da = data_array.where(self.has_flag(0))
+        return da
+
+    def merge(self, ds_ref, ds_test, test_variables):
+        try:
+            source = ds_ref.attrs['sources']['NIC-SHP']
+            ds_ref = ds_ref.isel(source=source, time=ds_ref.source == source)
+        except ValueError:
+            pass
+
+        ds_ref = ds_ref.reindex(time=self.ds_test.time, method='ffill')
+        dataset = xr.merge([ds_ref, ds_test[test_variables]], join='inner')
+        if self.start_date:
+            dataset = dataset.sel(time=slice(self.start_date, self.end_date))
+        len_time, i = self.get_chunk_size(len(dataset.time))
+        dataset = dataset.isel(time=slice(0, len_time)).chunk(chunks={'time': i})
+        return dataset
+
+    def load_test_data(self, source_glob, preprocess=None):
+        """
+        :param source_glob: OSI SAF glob string
+        """
+
+        ds_test = xr.open_mfdataset(source_glob, autoclose=True, decode_cf=True, data_vars=self.test_variables,
+                                    parallel=True, preprocess=preprocess)
+
+        # Remove the time from the date so that it corresponds to the reference data set
+        # ds_test['time'] = ds_test['time'].to_series().apply(lambda dt:
+        #                                                     datetime(dt.year, dt.month, dt.day, 0))
+        # ds_test = ds_test[[self.test_variables]].astype(np.float32)
+        len_time, i = self.get_chunk_size(len(ds_test.time))
+        ds_test = ds_test.isel(time=slice(0, len_time)).chunk(chunks={'time': i})
+        ds_test = self.variable_info(ds_test)
+        return ds_test

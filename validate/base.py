@@ -10,8 +10,10 @@ import yaml
 from datetime import datetime, timedelta
 from ftplib import FTP, error_perm
 from functools import lru_cache
+from itertools import chain
 from glob import glob
-from os.path import join, isfile
+from os.path import join, isfile, isdir
+from os.path import dirname
 
 log = logging.getLogger()
 log.setLevel(logging.DEBUG)
@@ -69,13 +71,13 @@ class Validate:
         self.ds_test = self.ds_test[self.test_variables]
         log.info("Loading reference data...")
         self.ds_ref = self.load_reference_data(self.ref_glob)
-
-        # self.ds_ref['xc'] = self.ds_test.xc
-        # self.ds_ref['yc'] = self.ds_test.yc
+        # self.ds_ref = self.ds_ref.isel(source=0, time=self.ds_ref.source == 0)
 
         # Check that the coordinates for the reference and test dataset are the same
-        assert np.all(self.ds_ref.xc.data == self.ds_test.xc.data)
-        assert np.all(self.ds_ref.yc.data == self.ds_test.yc.data)
+        assert np.all(np.isclose(self.ds_ref.xc.data, self.ds_test.xc.data, atol=10))
+        assert np.all(np.isclose(self.ds_ref.yc.data, self.ds_test.yc.data, atol=10))
+        self.ds_ref['xc'] = self.ds_test.xc
+        self.ds_ref['yc'] = self.ds_test.yc
 
     @staticmethod
     def get_config():
@@ -172,6 +174,9 @@ class Validate:
                     self.delete_list.append(full_filename)
             yield full_filename
 
+    def get_test_data_local(self, urls):
+        return chain.from_iterable(glob(url) for url in urls if glob(url))
+
     @staticmethod
     def get_chunk_size(len_time):
         """
@@ -216,13 +221,15 @@ class Validate:
         if self.test_delay:
             times = ts_desired
 
-        urls = (self.url.format(Y=dt.year, y=dt.year, m=dt.month, d=dt.day, hem=self.hemisphere.lower()) for dt in
+        urls = (self.url.format(Y=dt.year, m=dt.month, d=dt.day, hem=self.hemisphere.lower()) for dt in
                 sorted(set(times)))
 
         if 'ftp' in self.url:
             test_files_local = self.download_test_data_ftp(urls)
         elif self.store_test_files and ('http' in self.url):
             test_files_local = self.download_test_data_http(urls)
+        elif isdir(dirname(self.url)):
+            test_files_local = self.get_test_data_local(urls)
 
         # Get the ice chart files covering the desired interval
         return list(test_files_local), ice_charts
@@ -290,14 +297,12 @@ class Validate:
         ds_ref['time'] = ds_ref['time'].to_series().apply(lambda dt:
                                                           datetime(dt.year, dt.month, dt.day, 0))
         ds_ref = ds_ref.isel(time=~ds_ref.time.to_pandas().duplicated())
-        # try:
-        #     ds_ref = ds_ref.reindex(source=source]).squeeze()
-        # except AttributeError:
 
         ds_ref = ds_ref.squeeze()
         len_time, i = self.get_chunk_size(len(ds_ref.time))
         ds_ref = ds_ref.isel(time=slice(0, len_time)).chunk(chunks={'time': i})
         ds_ref['codes'] = ds_ref['codes'].astype(np.int16)
+        ds_ref.attrs['sources'] = sources_dict
         return ds_ref
 
     def merge(self, ds_ref, ds_test, test_variables):

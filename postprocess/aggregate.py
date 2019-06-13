@@ -27,7 +27,8 @@ def seasonal_ds(fname, ds):
 
 
 def aggregated_stats(fname, ds):
-    ds_sub = ds[['ice_bias', 'ice_stddev', 'water_bias', 'water_stddev', 'intermediate_bias', 'intermediate_stddev']]
+    ds_sub = ds[['ice_bias', 'ice_stddev', 'water_bias', 'water_stddev', 'intermediate_bias', 'intermediate_stddev',
+                 'within_10pct', 'within_20pct']]
     ds_sub = ds_sub.to_dataframe()
     del ds_sub['source']
     fname_excel = fname.replace('.nc', '.xlsx')
@@ -61,11 +62,15 @@ def aggregated_stats(fname, ds):
 if __name__ == '__main__':
     config = get_config()
     direc = join(config['MachineConfigs'][platform.node()]['results'])
-    for fname in filter(lambda fn: not 'seasonal' in fn, glob(direc + '*.nc')):
+    for fname in filter(lambda fn: not 'seasonal' in fn, glob(direc + 'ice_conc*.nc')):
         print(fname)
         ds = xr.open_dataset(fname)
         # seasonal_ds(fname, ds)
-        aggregated_stats(fname, ds)
+        try:
+            aggregated_stats(fname, ds)
+        except KeyError:
+            print(fname, ' is missing a key')
+
 
 
 

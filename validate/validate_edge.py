@@ -211,7 +211,7 @@ class ValidateEdge(base.Validate):
                                                                 coords={'times_6monthly': data.time.values})
 
         out_vars = ['distance_between_edges_mean', 'false_ice', 'false_water', 'true_ice']
-        json_str = self.dataset.drop('source')[out_vars].to_dataframe().transpose().to_json(double_precision=3)
+        json_str = self.dataset[out_vars].to_dataframe().transpose().to_json(double_precision=3)
         return json_str
 
 

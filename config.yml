@@ -77,6 +77,7 @@ Validations:
     icechart_dir: OSISAF
     validator: ValidateEdge
 
+
   # (I)CDF
 
   ice_conc_icdr_osi430_http:
@@ -89,6 +90,19 @@ Validations:
     icechart_dir: EASE2
     validator: ValidateConcCDR
 
+
+  # OSI SAF Level 2 Ice Conc
+
+  ice_conc_amsr2_level2:
+    url: /data/ice_conc/amsr2/level2/out/resampled/amsr_gw1_{Y}{m:02d}{d:02d}*_sn_{hem}.nc
+    icechart_dir: OSISAF
+    validator: ValdiateConcL2
+
+
+  ice_conc_ssmi_level2:
+    url: /data/ice_conc/ssmi/level2/out/resampled/ssmi_f*_{Y}{m:02d}{d:02d}*_sn_{hem}.nc
+    icechart_dir: OSISAF
+    validator: ValdiateConcL2
 
 
   # Add new validation config here...
@@ -113,8 +127,5 @@ ValidationLists:
     - ice_conc_amsr_tud_ftp
     - ice_conc_edge_ftp
 
-  ICDR:
-    - ice_conc_icdr_osi430_http
-    - ice_conc_icdr_osi430b_http
 
   # Add a new list here:
