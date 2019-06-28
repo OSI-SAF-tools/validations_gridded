@@ -36,9 +36,10 @@ Examples:
 """
 
 import logging
-import platform
+# import platform
 import sys
 import yaml
+from datetime import datetime, timedelta
 from docopt import docopt
 from os.path import join, dirname
 
@@ -61,7 +62,7 @@ def get_config():
 
 
 def validation(config, validation_set, start, end, save_full_results, save_osisaf_files):
-    machine_cfg = config['MachineConfigs'][platform.node()]
+    machine_cfg = config['MachineConfigs']['any']
 
     try:
         validations_list = config['ValidationLists'][validation_set]
@@ -81,17 +82,18 @@ def validation(config, validation_set, start, end, save_full_results, save_osisa
                                results_dir, save_osisaf_files)
             yield val_name, results
         except Exception as err:
-            log.error('Expection {0} with {1}'.format(err, val_name))
+            log.error('Expectation {0} with {1}'.format(err, val_name))
             raise
 
 
 def to_database(config, validation_set):
-    start  # TODO: get from db
-    end  # TODO: get from db
-    if machine_cfg['mongodb_ip']:
-        pass  # TODO: Insert result into a database
-    for name, res in validation(config, validation_set, start, end, False, False):
-        pass  # TODO: insert into database
+    # todo: get dates from database
+    start = '20190601'
+    end = '20190627'
+    # start = (datetime.now() - timedelta(days=10)).strftime('%Y%m%d')
+    # end = datetime.now().strftime('%Y%m%d')
+
+    return start, end
 
 
 if __name__ == "__main__":
@@ -103,10 +105,15 @@ if __name__ == "__main__":
     else:
         cfg = get_config()
         if args['to_database']:
-            to_database(cfg, args['<validation_names>'])
+            start, end = to_database(cfg, args['<validation_names>'])
+            save_full_results = save_osisaf_files = False
         else:
             save_full_results = save_osisaf_files = True
-            for name, result in validation(cfg, args['<validation_names>'], args['<start>'], args['<end>'],
-                                           save_full_results, save_osisaf_files):
-                print(name)
-                print(result)
+            start = args['<start>']
+            end = args['<end>']
+
+        for name, result in validation(cfg, args['<validation_names>'], start, end,
+                                       save_full_results, save_osisaf_files):
+            print(name)
+            print(result)
+            print('done')

@@ -11,7 +11,10 @@ MachineConfigs:
     results: /data/jol/results/ # results directory
     mongodb_ip: None # TODO: Enter database info
 
-    # Add your new machine config here
+  any:
+    ice_charts: /data/ice_val/ice_charts/gridded/
+    results: /data/ice_val/results
+    mongodb_ip: local
 
 
 # Sets of validation arguments

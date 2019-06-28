@@ -1,0 +1,3 @@
+docopt
+scikit-image==0.14.2
+dask[array]==1.1.4

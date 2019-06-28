@@ -4,7 +4,11 @@ import os
 
 
 def get_validation_classes(modules):
-    'Get the validation classes from the submodules'
+    """
+    Get the validation classes from the submodules
+    :param modules:
+    :return:
+    """
     for mod in modules:
         attrs = dir(mod)  # This will list a lot of things, but we only want the validation classes
         for attr in attrs:

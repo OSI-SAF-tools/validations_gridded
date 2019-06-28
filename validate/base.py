@@ -57,7 +57,7 @@ class Validate:
         self.save_name = self.url.split('/')[-1].format(hem='', Y=0, m=0, d=0).replace('_000001200.nc', '').replace(
             '__',
             '_')
-        self.save_dir = join('/tmp', self.save_name)
+        self.save_dir = join('/data/ice_val/tmp', self.save_name)
         try:
             os.makedirs(self.save_dir)
         except FileExistsError:
