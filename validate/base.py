@@ -57,7 +57,10 @@ class Validate:
         self.save_name = self.url.split('/')[-1].format(hem='', Y=0, m=0, d=0).replace('_000001200.nc', '').replace(
             '__',
             '_')
-        self.save_dir = join('/data/ice_val/tmp', self.save_name)
+
+        # TODO: Ask Luis why had you changed it to this self.save_dir = join('/data/ice_val/tmp', self.save_name)
+        self.save_dir = join('/tmp', self.save_name)
+
         try:
             os.makedirs(self.save_dir)
         except FileExistsError:
@@ -245,7 +248,7 @@ class Validate:
                                  'long_name': 'longitude',
                                  'units': 'degrees_east'}}}
         for v in ['lat', 'lon']:
-            ds[v].attrs = info[v]['attr']
+                ds[v].attrs = info[v]['attr']
         return ds
 
     def load_test_data(self, source_glob, preprocess=None):
@@ -298,8 +301,11 @@ class Validate:
                                                           datetime(dt.year, dt.month, dt.day, 0))
         ds_ref = ds_ref.isel(time=~ds_ref.time.to_pandas().duplicated())
 
-        ds_ref = ds_ref.squeeze()
-        len_time, i = self.get_chunk_size(len(ds_ref.time))
+        ds_ref = ds_ref.isel(source=0)
+        len_arr = len(ds_ref.time)
+        # if len_arr == (1, ):
+        #     len_arr = 1
+        len_time, i = self.get_chunk_size(len_arr)
         ds_ref = ds_ref.isel(time=slice(0, len_time)).chunk(chunks={'time': i})
         ds_ref['codes'] = ds_ref['codes'].astype(np.int16)
         ds_ref.attrs['sources'] = sources_dict

@@ -36,7 +36,7 @@ Examples:
 """
 
 import logging
-# import platform
+import platform
 import sys
 import yaml
 from datetime import datetime, timedelta
@@ -62,7 +62,10 @@ def get_config():
 
 
 def validation(config, validation_set, start, end, save_full_results, save_osisaf_files):
-    machine_cfg = config['MachineConfigs']['any']
+    try:
+        machine_cfg = config['MachineConfigs'][platform.node()]
+    except KeyError:
+        machine_cfg = config['MachineConfigs']['default']
 
     try:
         validations_list = config['ValidationLists'][validation_set]
@@ -88,8 +91,8 @@ def validation(config, validation_set, start, end, save_full_results, save_osisa
 
 def to_database(config, validation_set):
     # todo: get dates from database
-    start = '20190601'
-    end = '20190627'
+    start = '20180101'
+    end = '20181231'
     # start = (datetime.now() - timedelta(days=10)).strftime('%Y%m%d')
     # end = datetime.now().strftime('%Y%m%d')
 

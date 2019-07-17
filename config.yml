@@ -11,7 +11,7 @@ MachineConfigs:
     results: /data/jol/results/ # results directory
     mongodb_ip: None # TODO: Enter database info
 
-  any:
+  default: # Used for containers
     ice_charts: /data/ice_val/ice_charts/gridded/
     results: /data/ice_val/results
     mongodb_ip: local
@@ -44,13 +44,13 @@ Validations:
 
   # Sea Ice Conc: AMSR-2 OSHD
 
-  ice_conc_amsr_oshd_http:
-    url: http://thredds.met.no/thredds/dodsC/osisaf/met.no/ice/amsr2_conc/{Y}/{m:02d}/ice_conc_{hem}_polstere-100_amsr2_{Y}{m:02d}{d:02d}1200.nc
+  ice_conc_amsr_oshd_ftp:
+    url: ftp://osisaf.met.no/archive/ice/conc_amsr/{Y}/{m:02d}/ice_conc_{hem}_polstere-100_amsr2_{Y}{m:02d}{d:02d}1200.nc
     icechart_dir: OSISAF
     validator: ValidateConcHYR
 
-  ice_conc_amsr_oshd_ftp:
-    url: ftp://osisaf.met.no/archive/ice/conc_amsr/{Y}/{m:02d}/ice_conc_{hem}_polstere-100_amsr2_{Y}{m:02d}{d:02d}1200.nc
+  ice_conc_amsr_oshd_http:
+    url: http://thredds.met.no/thredds/dodsC/osisaf/met.no/ice/amsr2_conc/{Y}/{m:02d}/ice_conc_{hem}_polstere-100_amsr2_{Y}{m:02d}{d:02d}1200.nc
     icechart_dir: OSISAF
     validator: ValidateConcHYR
 
@@ -96,14 +96,14 @@ Validations:
 
   # OSI SAF Level 2 Ice Conc
 
-  ice_conc_amsr2_level2:
-    url: /data/ice_conc/amsr2/level2/out/resampled/amsr_gw1_{Y}{m:02d}{d:02d}*_sn_{hem}.nc
+  ice_conc_amsr2_level2_tud:
+    url: /data1/jol/iceconc/amsr2/resampled/amsr_gw1_{Y}{m:02d}{d:02d}*_sn_{hem}_tud.nc
     icechart_dir: OSISAF
     validator: ValdiateConcL2
 
 
-  ice_conc_ssmi_level2:
-    url: /data/ice_conc/ssmi/level2/out/resampled/ssmi_f*_{Y}{m:02d}{d:02d}*_sn_{hem}.nc
+  ice_conc_ssmi_level2_osi:
+    url: /data1/jol/iceconc/amsr2/resampled/amsr_gw1_{Y}{m:02d}{d:02d}*_sn_{hem}_osi.nc
     icechart_dir: OSISAF
     validator: ValdiateConcL2
 
