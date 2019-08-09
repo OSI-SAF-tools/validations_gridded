@@ -12,19 +12,19 @@ from skimage import feature
 import logging
 import sys
 
-log = logging.getLogger()
-log.setLevel(logging.DEBUG)
-handler = logging.StreamHandler(sys.stdout)
-handler.setLevel(logging.DEBUG)
-formatter = logging.Formatter('%(asctime)s - %(name)s - %(message)s')
-handler.setFormatter(formatter)
-log.addHandler(handler)
+log = logging.getLogger(__name__)
+# log.setLevel(logging.DEBUG)
+# handler = logging.StreamHandler(sys.stdout)
+# handler.setLevel(logging.DEBUG)
+# formatter = logging.Formatter('%(asctime)s - %(name)s - %(message)s')
+# handler.setFormatter(formatter)
+# log.addHandler(handler)
 
 warnings.filterwarnings('ignore')
 
 
 class ValidateEdge(base.Validate):
-    test_variables = ['ice_edge', ]
+    product_variables = ['ice_edge', ]
 
     @staticmethod
     def standardise_func_ice_edge(ice_edge):
@@ -155,12 +155,12 @@ class ValidateEdge(base.Validate):
         :return:
         """
         try:
-            xy_test = self.get_xy_coords(ds['ice_edge_line'])
-            kdt = KDTree(xy_test)
+            xy_product = self.get_xy_coords(ds['ice_edge_line'])
+            kdt = KDTree(xy_product)
             xy_chart = self.get_xy_coords(ds['ice_chart_line'])
             v = np.array(kdt.query(xy_chart)[0])
             result = xr.DataArray([v.mean(), np.median(v)])
-            # pl.scatter(*list(zip(*xy_test)), s=0.01, c='b')
+            # pl.scatter(*list(zip(*xy_product)), s=0.01, c='b')
             # pl.scatter(*list(zip(*xy_chart)), s=0.01, c='r')
             # pl.show()
             return result
@@ -192,14 +192,15 @@ class ValidateEdge(base.Validate):
     def __call__(self):
         super().__call__()
 
-        # ds_test['edge_occured'] = self.has_edge_occurred(ds_test['ice_edge'])
+        # ds_product['edge_occured'] = self.has_edge_occurred(ds_product['ice_edge'])
         log.info("Merging...")
-        dataset = self.merge(self.ds_ref, self.ds_test, self.test_variables)
+        dataset = self.merge(self.ds_ref, self.ds_product, self.product_variables)
+        dataset.time.encoding['units'] = 'seconds since 1970-01-01 00:00:00'
         log.info("Standardising...")
         self.dataset = self.standardise_data(dataset)
         self.dataset.compute()
 
-        del self.ds_ref, self.ds_test, dataset
+        del self.ds_ref, self.ds_product, dataset
 
         self.compute_distance_between_edges()
         self.compute_percent_area_of_diff()

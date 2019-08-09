@@ -19,7 +19,7 @@ Arguments:
     <start>            Start date of validation period, in the format YYYYmmdd
     <end>              End date of validation period, in the format YYYYmmdd
 
-With 'validation_runner.py to_database <validation_names>' the latest results are stored in a database, whereas with
+With 'validation_runner.py to_database <validation_names>' the laproduct results are stored in a database, whereas with
 'validation_runner.py <validation_names> <start> <end>' the results are stored as a netCDF to the directory
 MachineConfigs/results in config.yml.
 
@@ -85,7 +85,7 @@ def validation(config, validation_set, start, end, save_full_results, save_osisa
                                results_dir, save_osisaf_files)
             yield val_name, results
         except Exception as err:
-            log.error('Expectation {0} with {1}'.format(err, val_name))
+            log.error('Exception: {0} with {1}'.format(err, val_name))
             raise
 
 
@@ -117,6 +117,5 @@ if __name__ == "__main__":
 
         for name, result in validation(cfg, args['<validation_names>'], start, end,
                                        save_full_results, save_osisaf_files):
-            print(name)
+            log.info('finished, here are the results')
             print(result)
-            print('done')

@@ -33,12 +33,12 @@ Validations:
 
   ice_conc_ssmis_http:
     url: http://thredds.met.no/thredds/dodsC/osisaf/met.no/ice/conc/{Y}/{m:02d}/ice_conc_{hem}_polstere-100_multi_{Y}{m:02d}{d:02d}1200.nc
-    icechart_dir: OSISAF
+    icechart_dir: OSISAF/nic-shp
     validator: ValidateConcHYR
 
   ice_conc_ssmis_ftp:
     url: ftp://osisaf.met.no/archive/ice/conc/{Y}/{m:02d}/ice_conc_{hem}_polstere-100_multi_{Y}{m:02d}{d:02d}1200.nc
-    icechart_dir: OSISAF
+    icechart_dir: OSISAF/nic-shp
     validator: ValidateConcHYR
 
 
@@ -46,12 +46,12 @@ Validations:
 
   ice_conc_amsr_oshd_ftp:
     url: ftp://osisaf.met.no/archive/ice/conc_amsr/{Y}/{m:02d}/ice_conc_{hem}_polstere-100_amsr2_{Y}{m:02d}{d:02d}1200.nc
-    icechart_dir: OSISAF
+    icechart_dir: OSISAF/nic-shp
     validator: ValidateConcHYR
 
   ice_conc_amsr_oshd_http:
     url: http://thredds.met.no/thredds/dodsC/osisaf/met.no/ice/amsr2_conc/{Y}/{m:02d}/ice_conc_{hem}_polstere-100_amsr2_{Y}{m:02d}{d:02d}1200.nc
-    icechart_dir: OSISAF
+    icechart_dir: OSISAF/nic-shp
     validator: ValidateConcHYR
 
 
@@ -59,12 +59,12 @@ Validations:
 
   ice_conc_amsr_tud_ftp:
     url: ftp://osisaf.met.no/archive/ice/conc_amsr/{Y}/{m:02d}/ice_conc_{hem}_polstere-100_amsr2-tud_{Y}{m:02d}{d:02d}1200.nc
-    icechart_dir: OSISAF
+    icechart_dir: OSISAF/nic-shp
     validator: ValidateConcHYR
 
   ice_conc_amsr_tud_http:
     url: http://thredds.met.no/thredds/dodsC/osisaf/met.no/ice/amsr2_conc/{Y}/{m:02d}/ice_conc_{hem}_polstere-100_amsr2-tud_{Y}{m:02d}{d:02d}1200.nc
-    icechart_dir: OSISAF
+    icechart_dir: OSISAF/nic-shp
     validator: ValidateConcHYR
 
 
@@ -72,12 +72,12 @@ Validations:
 
   ice_conc_edge_ftp:
     url: ftp://osisaf.met.no/archive/ice/edge/{Y}/{m:02d}/ice_edge_{hem}_polstere-100_multi_{Y}{m:02d}{d:02d}1200.nc
-    icechart_dir: OSISAF
+    icechart_dir: OSISAF/nic-shp
     validator: ValidateEdge
 
   ice_conc_edge_http:
     url: http://thredds.met.no/thredds/dodsC/osisaf/met.no/ice/edge/{Y}/{m:02d}/ice_edge_{hem}_polstere-100_multi_{Y}{m:02d}{d:02d}1200.nc
-    icechart_dir: OSISAF
+    icechart_dir: OSISAF/nic-shp
     validator: ValidateEdge
 
 
@@ -85,7 +85,7 @@ Validations:
 
   ice_conc_icdr_osi430_http:
     url: http://thredds.met.no/thredds/dodsC/osisaf/met.no/reprocessed/ice/conc_cr_files/{Y}/{m:02d}/ice_conc_{hem}_polstere-100_cont-reproc_{Y}{m:02d}{d:02d}1200.nc
-    icechart_dir: OSISAF
+    icechart_dir: OSISAF/nic-shp
     validator: ValidateConcCDR
 
   ice_conc_icdr_osi430b_http:
@@ -98,13 +98,13 @@ Validations:
 
   ice_conc_amsr2_level2_tud:
     url: /data1/jol/iceconc/amsr2/resampled/amsr_gw1_{Y}{m:02d}{d:02d}*_sn_{hem}_tud.nc
-    icechart_dir: OSISAF
+    icechart_dir: OSISAF/nic-shp
     validator: ValdiateConcL2
 
 
   ice_conc_ssmi_level2_osi:
     url: /data1/jol/iceconc/amsr2/resampled/amsr_gw1_{Y}{m:02d}{d:02d}*_sn_{hem}_osi.nc
-    icechart_dir: OSISAF
+    icechart_dir: OSISAF/nic-shp
     validator: ValdiateConcL2
 
 

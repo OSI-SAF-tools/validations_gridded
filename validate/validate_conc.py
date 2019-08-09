@@ -11,17 +11,17 @@ from collections import OrderedDict
 
 from validate import base
 
-log = logging.getLogger()
-log.setLevel(logging.DEBUG)
-handler = logging.StreamHandler(sys.stdout)
-handler.setLevel(logging.DEBUG)
-formatter = logging.Formatter('%(asctime)s - %(name)s - %(message)s')
-handler.setFormatter(formatter)
-log.addHandler(handler)
+log = logging.getLogger(__name__)
+# log.setLevel(logging.DEBUG)
+# handler = logging.StreamHandler(sys.stdout)
+# handler.setLevel(logging.DEBUG)
+# formatter = logging.Formatter('%(asctime)s - %(name)s - %(message)s')
+# handler.setFormatter(formatter)
+# log.addHandler(handler)
 
 
 class ValidateConc(base.Validate):
-    test_variables = ['ice_conc', 'status_flag']
+    product_variables = ['ice_conc', 'status_flag']
 
     def standardise_ref(self):
         """
@@ -47,10 +47,10 @@ class ValidateConc(base.Validate):
         da = da.where(valid_ref).where(valid_src)
         return da
 
-    def load_test_data(self, source_glob, preprocess=None):
-        test = super().load_test_data(source_glob, preprocess)
-        test['status_flag'] = test['status_flag'].astype(np.uint8)
-        return test
+    def load_product_data(self, source_glob, preprocess=None):
+        product = super().load_product_data(source_glob, preprocess)
+        product['status_flag'] = product['status_flag'].astype(np.uint8)
+        return product
 
     """
     Validation Functions
@@ -128,7 +128,8 @@ class ValidateConc(base.Validate):
         super().__call__()
 
         log.info("Merging...")
-        self.dataset = self.merge(self.ds_ref, self.ds_test, self.test_variables)
+        self.dataset = self.merge(self.ds_ref, self.ds_product, self.product_variables)
+        self.dataset.time.encoding['units'] = 'seconds since 1970-01-01 00:00:00'
         log.info("Loading into memory...")
         self.dataset = self.dataset.compute()
         log.info("Standardising...")
@@ -168,35 +169,35 @@ class ValdiateConcL2(ValidateConc):
         da = data_array.where(self.has_flag(0))
         return da
 
-    def merge(self, ds_ref, ds_test, test_variables):
+    def merge(self, ds_ref, ds_product, product_variables):
         try:
             source = ds_ref.attrs['sources']['NIC-SHP']
             ds_ref = ds_ref.isel(source=source, time=ds_ref.source == source)
         except ValueError:
             pass
 
-        ds_ref = ds_ref.reindex(time=self.ds_test.time, method='ffill')
-        dataset = xr.merge([ds_ref, ds_test[test_variables]], join='inner')
+        ds_ref = ds_ref.reindex(time=self.ds_product.time, method='ffill')
+        dataset = xr.merge([ds_ref, ds_product[product_variables]], join='inner')
         if self.start_date:
             dataset = dataset.sel(time=slice(self.start_date, self.end_date))
         len_time, i = self.get_chunk_size(len(dataset.time))
         dataset = dataset.isel(time=slice(0, len_time)).chunk(chunks={'time': i})
         return dataset
 
-    def load_test_data(self, source_glob, preprocess=None):
+    def load_product_data(self, product_glob, preprocess=None):
         """
-        :param source_glob: OSI SAF glob string
+        :param product_glob: OSI SAF glob string
         """
 
-        ds_test = xr.open_mfdataset(source_glob, autoclose=True, decode_cf=True, data_vars=self.test_variables,
-                                    parallel=True, preprocess=preprocess)
+        ds_product = xr.open_mfdataset(product_glob, autoclose=True, decode_cf=True, data_vars=self.product_variables,
+                                       parallel=True, preprocess=preprocess)
 
         # Remove the time from the date so that it corresponds to the reference data set
-        # ds_test['time'] = ds_test['time'].to_series().apply(lambda dt:
+        # ds_product['time'] = ds_product['time'].to_series().apply(lambda dt:
         #                                                     datetime(dt.year, dt.month, dt.day, 0))
-        # ds_test = ds_test[[self.test_variables]].astype(np.float32)
-        len_time, i = self.get_chunk_size(len(ds_test.time))
-        ds_test = ds_test.isel(time=slice(0, len_time)).chunk(chunks={'time': i})
-        ds_test = self.variable_info(ds_test)
-        return ds_test
+        # ds_product = ds_product[[self.product_variables]].astype(np.float32)
+        len_time, i = self.get_chunk_size(len(ds_product.time))
+        ds_product = ds_product.isel(time=slice(0, len_time)).chunk(chunks={'time': i})
+        ds_product = self.variable_info(ds_product)
+        return ds_product
 

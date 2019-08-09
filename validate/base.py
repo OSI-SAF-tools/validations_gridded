@@ -10,18 +10,18 @@ import yaml
 from datetime import datetime, timedelta
 from ftplib import FTP, error_perm
 from functools import lru_cache
-from itertools import chain
 from glob import glob
-from os.path import join, isfile, isdir
+from itertools import chain
 from os.path import dirname
+from os.path import join, isfile, isdir
 
-log = logging.getLogger()
-log.setLevel(logging.DEBUG)
-handler = logging.StreamHandler(sys.stdout)
-handler.setLevel(logging.DEBUG)
-formatter = logging.Formatter('%(asctime)s - %(name)s - %(message)s')
-handler.setFormatter(formatter)
-log.addHandler(handler)
+log = logging.getLogger(__name__)
+# log.setLevel(logging.DEBUG)
+# handler = logging.StreamHandler(sys.stdout)
+# handler.setLevel(logging.DEBUG)
+# formatter = logging.Formatter('%(asctime)s - %(name)s - %(fmessage)s')
+# handler.setFormatter(formatter)
+# log.addHandler(handler)
 
 warnings.filterwarnings('ignore')
 
@@ -31,7 +31,7 @@ sys.path.insert(0, os.getcwd())
 class Validate:
     name = 'validation'
 
-    def __init__(self, url, icechart_dir, hemisphere, start_date, end_date, store_test_files=False):
+    def __init__(self, url, icechart_dir, hemisphere, start_date, end_date, store_product_files=False):
         """
         :param url: url to OSI SAF data. e.g. http://.../{Y}/{m:02d}/...{Y}{m:02d}{d:02d}1200.nc
                     where {Y} is the year
@@ -41,22 +41,21 @@ class Validate:
         :param hemisphere: either NH|SH
         :param start_date: format: YYYYmmdd
         :param end_date: format: YYYYmmdd
-        :param store_test_files: True stores the results as a netCDF file
+        :param store_product_files: True stores the results as a netCDF file
         """
 
-        self.test_delay = None  # TODO: Use if there a delay between the ref and test data
+        self.product_delay = None  # TODO: Use if there a delay between the ref and product data
         # Set Attributes
         self.hemisphere = hemisphere
         self.start_date = start_date
         self.end_date = end_date
         self.url = url
         self.ice_charts_dir = icechart_dir
-        self.store_test_files = store_test_files
+        self.store_product_files = store_product_files
         self.delete_list = []
 
-        self.save_name = self.url.split('/')[-1].format(hem='', Y=0, m=0, d=0).replace('_000001200.nc', '').replace(
-            '__',
-            '_')
+        self.save_name = self.url.split('/')[-1].format(hem='', Y=0, m=0, d=0).replace('.nc', '').\
+            replace('_00000', '').replace('1200', '').replace('__', '_').replace('*', '_all')
 
         # TODO: Ask Luis why had you changed it to this self.save_dir = join('/data/ice_val/tmp', self.save_name)
         self.save_dir = join('/tmp', self.save_name)
@@ -67,20 +66,21 @@ class Validate:
             pass
 
     def __call__(self):
+        log.info("Processing the {0} hemisphere".format(self.hemisphere))
         # Load Data
-        self.test_files, self.ref_glob = self.get_data()
-        log.info("Loading test data...")
-        self.ds_test = self.load_test_data(self.test_files)
-        self.ds_test = self.ds_test[self.test_variables]
+        self.product_files, self.ref_glob = self.get_data()
+        log.info("Loading product data...")
+        self.ds_product = self.load_product_data(self.product_files)
+        self.ds_product = self.ds_product[self.product_variables]
         log.info("Loading reference data...")
         self.ds_ref = self.load_reference_data(self.ref_glob)
         # self.ds_ref = self.ds_ref.isel(source=0, time=self.ds_ref.source == 0)
 
-        # Check that the coordinates for the reference and test dataset are the same
-        assert np.all(np.isclose(self.ds_ref.xc.data, self.ds_test.xc.data, atol=10))
-        assert np.all(np.isclose(self.ds_ref.yc.data, self.ds_test.yc.data, atol=10))
-        self.ds_ref['xc'] = self.ds_test.xc
-        self.ds_ref['yc'] = self.ds_test.yc
+        # Check that the coordinates for the reference and product dataset are the same
+        assert np.all(np.isclose(self.ds_ref.xc.data, self.ds_product.xc.data, atol=10))
+        assert np.all(np.isclose(self.ds_ref.yc.data, self.ds_product.yc.data, atol=10))
+        self.ds_ref['xc'] = self.ds_product.xc
+        self.ds_ref['yc'] = self.ds_product.yc
 
     @staticmethod
     def get_config():
@@ -98,7 +98,7 @@ class Validate:
             yield dt
             dt += step
 
-    def download_test_data_http(self, urls):
+    def download_product_data_http(self, urls):
         for url in urls:
             filename = url.split('/')[-1]
             full_filename = join(self.save_dir, filename)
@@ -118,17 +118,17 @@ class Validate:
             finally:
                 if isfile(full_filename) and os.stat(full_filename).st_size == 0:
                     os.remove(full_filename)
-                if not self.store_test_files:
+                if not self.store_product_files:
                     self.delete_list.append(full_filename)
             yield full_filename
 
-    def download_test_data_ftp(self, urls):
+    def download_product_data_ftp(self, urls):
 
         # if not urls:
         #     raise ValueError('No urls found on remote server')
 
         ftp_server = self.url.split('/')[2]
-        ftp = FTP(ftp_server, timeout=60*60*12)
+        ftp = FTP(ftp_server, timeout=60 * 60 * 12)
         ftp.login()
 
         # check that the directory exists
@@ -173,11 +173,11 @@ class Validate:
                 log.error('Cannot get: {0}\n {1}'.format(url, err))
                 continue
             finally:
-                if not self.store_test_files:
+                if not self.store_product_files:
                     self.delete_list.append(full_filename)
             yield full_filename
 
-    def get_test_data_local(self, urls):
+    def get_product_data_local(self, urls):
         return chain.from_iterable(glob(url) for url in urls if glob(url))
 
     @staticmethod
@@ -213,29 +213,34 @@ class Validate:
                     yield f, time
 
     def get_data(self):
-        # if there is no delay in the test data relative to the reference then use the same time series as
+        # if there is no delay in the product data relative to the reference then use the same time series as
         # ice chart
         ts_desired = list(self.generate_timeseries())
         ice_charts_times = list(zip(*self.get_chart_fnames(ts_desired)))
         if not ice_charts_times:
-            raise ValueError('There are no ice charts with the same dates as the OSI SAF data')
+            raise IOError('There are no ice charts with the same dates as the OSI SAF data')
         ice_charts, times = ice_charts_times[0], ice_charts_times[1]
 
-        if self.test_delay:
+        if self.product_delay:
             times = ts_desired
 
         urls = (self.url.format(Y=dt.year, m=dt.month, d=dt.day, hem=self.hemisphere.lower()) for dt in
                 sorted(set(times)))
 
         if 'ftp' in self.url:
-            test_files_local = self.download_test_data_ftp(urls)
-        elif self.store_test_files and ('http' in self.url):
-            test_files_local = self.download_test_data_http(urls)
+            product_files_local = self.download_product_data_ftp(urls)
+        elif self.store_product_files and ('http' in self.url):
+            product_files_local = self.download_product_data_http(urls)
         elif isdir(dirname(self.url)):
-            test_files_local = self.get_test_data_local(urls)
+            product_files_local = self.get_product_data_local(urls)
+
+        product_files_local = list(product_files_local)
+
+        if not product_files_local:
+            raise IOError('No product files found')
 
         # Get the ice chart files covering the desired interval
-        return list(test_files_local), ice_charts
+        return product_files_local, ice_charts
 
     def variable_info(self, ds):
         info = {'lat': {'attr': {'least_significant_digit': 3,
@@ -248,25 +253,25 @@ class Validate:
                                  'long_name': 'longitude',
                                  'units': 'degrees_east'}}}
         for v in ['lat', 'lon']:
-                ds[v].attrs = info[v]['attr']
+            ds[v].attrs = info[v]['attr']
         return ds
 
-    def load_test_data(self, source_glob, preprocess=None):
+    def load_product_data(self, source_glob, preprocess=None):
         """
         :param source_glob: OSI SAF glob string
         """
 
-        ds_test = xr.open_mfdataset(source_glob, autoclose=True, decode_cf=True, data_vars=self.test_variables,
+        ds_product = xr.open_mfdataset(source_glob, autoclose=True, decode_cf=True, data_vars=self.product_variables,
                                     parallel=True, preprocess=preprocess)
 
         # Remove the time from the date so that it corresponds to the reference data set
-        ds_test['time'] = ds_test['time'].to_series().apply(lambda dt:
+        ds_product['time'] = ds_product['time'].to_series().apply(lambda dt:
                                                             datetime(dt.year, dt.month, dt.day, 0))
-        # ds_test = ds_test[[self.test_variables]].astype(np.float32)
-        len_time, i = self.get_chunk_size(len(ds_test.time))
-        ds_test = ds_test.isel(time=slice(0, len_time)).chunk(chunks={'time': i})
-        ds_test = self.variable_info(ds_test)
-        return ds_test
+        # ds_product = ds_product[[self.product_variables]].astype(np.float32)
+        len_time, i = self.get_chunk_size(len(ds_product.time))
+        ds_product = ds_product.isel(time=slice(0, len_time)).chunk(chunks={'time': i})
+        ds_product = self.variable_info(ds_product)
+        return ds_product
 
     @staticmethod
     def get_ice_charts_and_sources(fname_charts):
@@ -311,8 +316,8 @@ class Validate:
         ds_ref.attrs['sources'] = sources_dict
         return ds_ref
 
-    def merge(self, ds_ref, ds_test, test_variables):
-        dataset = xr.merge([ds_ref, ds_test[test_variables]], join='inner')
+    def merge(self, ds_ref, ds_product, product_variables):
+        dataset = xr.merge([ds_ref, ds_product[product_variables]], join='inner')
         if self.start_date:
             dataset = dataset.sel(time=slice(self.start_date, self.end_date))
         len_time, i = self.get_chunk_size(len(dataset.time))
@@ -325,11 +330,12 @@ class Validate:
 
     def to_netcdf(self, results_dir):
         encoding_float = {"least_significant_digit": 4, "zlib": True, "complevel": 6}
-        encodings = {v: encoding_float for v, ds in self.dataset.items() if np.issubdtype(ds.dtype, np.floating)}
-
+        encoding_int = {"zlib": True, "complevel": 6}
+        encodings = {v: encoding_float if np.issubdtype(ds.dtype, np.floating) else encoding_int for v, ds in self.dataset.items()}
+        class_name = str(self.__class__.__dict__['__module__']).split('.')[-1]
         v = self.hemisphere, self.start_date, self.end_date
-        fname = join(results_dir, self.save_name + '_{0}_{1}_{2}.nc'.format(*v))
-        self.dataset.to_netcdf(fname, encoding=encodings)  # , unlimited_dims=['time'])
+        fname = join(results_dir, class_name + '_' + self.save_name + '_{0}_{1}_{2}.nc'.format(*v))
+        self.dataset.to_netcdf(fname, encoding=encodings, unlimited_dims=['time'])
 
     def __enter__(self):
         for f in glob(join(self.save_dir, '*.nc')):

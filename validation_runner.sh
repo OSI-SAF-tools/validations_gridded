@@ -31,3 +31,6 @@ python3 validation_runner.py ProductionDMI 20150101 20170101
 
 # Documentation
 python3 validation_runner.py --help
+
+
+
