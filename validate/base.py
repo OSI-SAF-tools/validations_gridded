@@ -82,12 +82,13 @@ class Validate:
         self.ds_ref['xc'] = self.ds_product.xc
         self.ds_ref['yc'] = self.ds_product.yc
 
-    @staticmethod
-    def get_config():
-        current_dir = os.path.dirname(__file__)
-        with open(join(current_dir, "config.yml"), 'r') as stream:
-            base_url = yaml.load(stream)
-        return base_url
+    # TODO: Delete if not used
+    # @staticmethod
+    # def get_config():
+    #     current_dir = os.path.dirname(__file__)
+    #     with open(join(current_dir, "config.yml"), 'r') as stream:
+    #         base_url = yaml.load(stream)
+    #     return base_url
 
     def generate_timeseries(self):
         start = datetime.strptime(self.start_date, '%Y%m%d')
@@ -324,6 +325,7 @@ class Validate:
         dataset = dataset.isel(time=slice(0, len_time)).chunk(chunks={'time': i})
         return dataset
 
+    # TODO: Delete if not used
     @staticmethod
     def aggregate_stats(dataset, variable):
         return dataset[variable].resample(time='6M').mean()

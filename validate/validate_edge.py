@@ -206,7 +206,8 @@ class ValidateEdge(base.Validate):
         self.compute_percent_area_of_diff()
 
         for variable in ['distance_between_edges_mean', ]:
-            data = self.aggregate_stats(self.dataset, variable)
+            # TODO: Delete if not use
+            # data = self.aggregate_stats(self.dataset, variable)
             self.dataset[variable + '_6monthly'] = xr.DataArray(data,
                                                                 dims='times_6monthly',
                                                                 coords={'times_6monthly': data.time.values})

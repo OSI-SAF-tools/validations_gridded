@@ -34,9 +34,12 @@ def aggregated_stats(fname, ds):
     fname_excel = fname.replace('.nc', '.xlsx')
     writer = pd.ExcelWriter(fname_excel, engine='xlsxwriter')
     ds_sub.to_excel(writer, sheet_name='data')
-    for sheet in ['1M', '1Y']:
-        stats = ds_sub.resample(sheet).mean()
-        stats.to_excel(writer, sheet_name=sheet)
+    # for sheet in ['1M', '1Y']:
+    #     stats = ds_sub.resample(sheet).mean()
+    #     stats.to_excel(writer, sheet_name=sheet)
+    mean = pd.DataFrame(ds_sub.mean()).T
+    mean.index = pd.Series(ds_sub.index[-1])
+    mean.to_excel(writer, sheet_name='mean')
     writer.save()
     writer.close()
 
@@ -62,7 +65,7 @@ def aggregated_stats(fname, ds):
 if __name__ == '__main__':
     config = get_config()
     direc = join(config['MachineConfigs'][platform.node()]['results'])
-    for fname in filter(lambda fn: not 'seasonal' in fn, glob(direc + 'ice_conc*.nc')):
+    for fname in filter(lambda fn: not 'seasonal' in fn, glob(direc + 'validate_*.nc')):
         print(fname)
         ds = xr.open_dataset(fname)
         # seasonal_ds(fname, ds)
