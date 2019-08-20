@@ -5,6 +5,7 @@ validation_runner
 
 Usage:
     validation_runner.py <validation_names> <start> <end>
+    validation_runner.py <validation_names> <start> <end> [--resample_method=None]
     validation_runner.py to_database <validation_names>
     validation_runner.py --available_validators
     validation_runner.py -h | --help
@@ -12,12 +13,15 @@ Usage:
 Options:
     -h --help               Show this screen
     --available_validators  List the available validators to use for <validation_names>
+    --resample_method=<method> Resample (interpolate) ice charts to use nearest. Use 'None' for no resample,  'bfill' for backward fill interploation or 'fill' for forward fill
+
 
 Arguments:
     to_database        Save to results to a database and do NOT store OSI SAF files locally or save the results in a netCDF file
     <validation_names> Should be one included in config.yml under ValidationLists or Validations
     <start>            Start date of validation period, in the format YYYYmmdd
     <end>              End date of validation period, in the format YYYYmmdd
+
 
 With 'validation_runner.py to_database <validation_names>' the laproduct results are stored in a database, whereas with
 'validation_runner.py <validation_names> <start> <end>' the results are stored as a netCDF to the directory
@@ -61,7 +65,7 @@ def get_config():
     return base_url
 
 
-def validation(config, validation_set, start, end, save_full_results, save_osisaf_files):
+def validation(config, validation_set, start, end, save_full_results, save_osisaf_files, resample_method):
     try:
         machine_cfg = config['MachineConfigs'][platform.node()]
     except KeyError:
@@ -81,8 +85,9 @@ def validation(config, validation_set, start, end, save_full_results, save_osisa
         val_cfg = config['Validations'][val_name]
         try:
             ice_chart_dir = join(machine_cfg['ice_charts'], val_cfg['icechart_dir'])
+
             results = validate(val_cfg['validator'], val_cfg['url'], ice_chart_dir, start, end,
-                               results_dir, save_osisaf_files)
+                               results_dir, save_osisaf_files, resample_method)
             yield val_name, results
         except Exception as err:
             log.error('Exception: {0} with {1}'.format(err, val_name))
@@ -116,6 +121,6 @@ if __name__ == "__main__":
             end = args['<end>']
 
         for name, result in validation(cfg, args['<validation_names>'], start, end,
-                                       save_full_results, save_osisaf_files):
+                                       save_full_results, save_osisaf_files, args['--resample_method']):
             log.info('finished, here are the results')
             print(result)

@@ -24,7 +24,8 @@ def get_validation_classes(modules):
 validators = {cls.__name__: cls for cls in get_validation_classes((validate_conc, validate_edge))}
 
 
-def validate(validator, url, icechart_dir, start_date, end_date, netcdf_dir=None, save_osisaf_files=False):
+def validate(validator, url, icechart_dir, start_date, end_date, netcdf_dir=None, save_osisaf_files=False,
+             resample_method=False):
     """
     :param validator: name of class used to do the validation
     :param url:  url of OSI SAF data
@@ -54,7 +55,9 @@ def validate(validator, url, icechart_dir, start_date, end_date, netcdf_dir=None
                 for av in available_validators(validators):
                     print(av)
                 raise ()
-            with validator_cls(url, icechart_dir, hem, str(start_date), str(end_date), save_osisaf_files) as val:
+
+            with validator_cls(url, icechart_dir, hem, str(start_date), str(end_date), save_osisaf_files,
+                               resample_method) as val:
                 results[hem] = val()
                 if netcdf_dir:
                     val.to_netcdf(netcdf_dir)

@@ -31,7 +31,8 @@ sys.path.insert(0, os.getcwd())
 class Validate:
     name = 'validation'
 
-    def __init__(self, url, icechart_dir, hemisphere, start_date, end_date, store_product_files=False):
+    def __init__(self, url, icechart_dir, hemisphere, start_date, end_date, store_product_files=False,
+                 resample_method=None):
         """
         :param url: url to OSI SAF data. e.g. http://.../{Y}/{m:02d}/...{Y}{m:02d}{d:02d}1200.nc
                     where {Y} is the year
@@ -41,16 +42,18 @@ class Validate:
         :param hemisphere: either NH|SH
         :param start_date: format: YYYYmmdd
         :param end_date: format: YYYYmmdd
+        :param resample_method: None | 'backfill' | 'forwardfill'. Resamples the ice charts so that there is an
+                                icechart for every day
         :param store_product_files: True stores the results as a netCDF file
         """
 
-        self.product_delay = None  # TODO: Use if there a delay between the ref and product data
         # Set Attributes
         self.hemisphere = hemisphere
         self.start_date = start_date
         self.end_date = end_date
         self.url = url
         self.ice_charts_dir = icechart_dir
+        self.resample_icecharts = resample_method
         self.store_product_files = store_product_files
         self.delete_list = []
 
@@ -81,14 +84,6 @@ class Validate:
         assert np.all(np.isclose(self.ds_ref.yc.data, self.ds_product.yc.data, atol=10))
         self.ds_ref['xc'] = self.ds_product.xc
         self.ds_ref['yc'] = self.ds_product.yc
-
-    # TODO: Delete if not used
-    # @staticmethod
-    # def get_config():
-    #     current_dir = os.path.dirname(__file__)
-    #     with open(join(current_dir, "config.yml"), 'r') as stream:
-    #         base_url = yaml.load(stream)
-    #     return base_url
 
     def generate_timeseries(self):
         start = datetime.strptime(self.start_date, '%Y%m%d')
@@ -222,7 +217,7 @@ class Validate:
             raise IOError('There are no ice charts with the same dates as the OSI SAF data')
         ice_charts, times = ice_charts_times[0], ice_charts_times[1]
 
-        if self.product_delay:
+        if self.resample_icecharts:
             times = ts_desired
 
         urls = (self.url.format(Y=dt.year, m=dt.month, d=dt.day, hem=self.hemisphere.lower()) for dt in
@@ -268,7 +263,7 @@ class Validate:
         # Remove the time from the date so that it corresponds to the reference data set
         ds_product['time'] = ds_product['time'].to_series().apply(lambda dt:
                                                             datetime(dt.year, dt.month, dt.day, 0))
-        # ds_product = ds_product[[self.product_variables]].astype(np.float32)
+
         len_time, i = self.get_chunk_size(len(ds_product.time))
         ds_product = ds_product.isel(time=slice(0, len_time)).chunk(chunks={'time': i})
         ds_product = self.variable_info(ds_product)
@@ -313,6 +308,16 @@ class Validate:
         #     len_arr = 1
         len_time, i = self.get_chunk_size(len_arr)
         ds_ref = ds_ref.isel(time=slice(0, len_time)).chunk(chunks={'time': i})
+
+        if self.resample_icecharts:
+            times_filled = getattr(ds_ref.time.resample(time='1D'), self.resample_icecharts)()
+            ds_ref = getattr(ds_ref.resample(time='1D'), self.resample_icecharts)()
+            ds_ref['times_filled'] = xr.Variable(('time',), times_filled)
+            ds_ref.attrs = {'ice_chart_resampling_method': self.resample_icecharts}
+        else:
+            ds_ref['resampled'] = xr.Variable(('time',), np.zeros(ds_ref.time.shape))
+            ds_ref.attrs = {'ice_chart_resampling_method': 'Ice charts were not resampled'}
+
         ds_ref['codes'] = ds_ref['codes'].astype(np.int16)
         ds_ref.attrs['sources'] = sources_dict
         return ds_ref
